@@ -30,7 +30,7 @@ const Index = () => {
             <a href="/about" className="text-foreground hover:text-primary transition-colors">About</a>
             <a href="/contact" className="text-foreground hover:text-primary transition-colors">Contact</a>
           </nav>
-          <Button onClick={() => navigate("/admin")} variant="default">
+          <Button onClick={() => navigate("/auth")} variant="default">
             Admin Login
           </Button>
         </div>

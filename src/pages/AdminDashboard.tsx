@@ -3,14 +3,27 @@ import { Shield, Plus, FileText, BarChart3, Users, Settings, LogOut } from "luci
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "react-router-dom";
 import IssueCertificate from "@/components/admin/IssueCertificate";
 import CertificateList from "@/components/admin/CertificateList";
 import Analytics from "@/components/admin/Analytics";
+import { useAuth } from "@/hooks/useAuth";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
+  const { signOut, user } = useAuth();
+  const { loading } = useAdminCheck();
   const [activeTab, setActiveTab] = useState("overview");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,8 +35,8 @@ const AdminDashboard = () => {
             <span className="text-xl font-bold text-foreground">CertiChain Admin</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Admin User</span>
-            <Button onClick={() => navigate("/")} variant="ghost" size="sm">
+            <span className="text-sm text-muted-foreground">{user?.email}</span>
+            <Button onClick={signOut} variant="ghost" size="sm">
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </Button>

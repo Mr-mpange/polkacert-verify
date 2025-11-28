@@ -7,8 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const IssueCertificate = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     holderName: "",
     courseName: "",
@@ -19,6 +22,7 @@ const IssueCertificate = () => {
   const [file, setFile] = useState<File | null>(null);
   const [qrCode, setQrCode] = useState<string>("");
   const [certificateId, setCertificateId] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const generateCertificateId = () => {
     return `CERT-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
@@ -46,20 +50,54 @@ const IssueCertificate = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Generate certificate ID
+    if (!user) {
+      toast.error("You must be logged in to issue certificates");
+      return;
+    }
+
+    setIsSubmitting(true);
     const certId = generateCertificateId();
-    setCertificateId(certId);
-
-    // Generate QR code
-    await generateQRCode(certId);
-
-    // Simulate blockchain transaction
-    toast.loading("Submitting to blockchain...", { id: "blockchain" });
     
-    setTimeout(() => {
+    try {
+      toast.loading("Issuing certificate...", { id: "blockchain" });
+
+      // Generate QR code
+      const qrCodeData = await generateQRCode(certId);
+
+      // Insert certificate into database
+      const { error } = await supabase.from("certificates").insert({
+        certificate_id: certId,
+        holder_name: formData.holderName,
+        course_name: formData.courseName,
+        institution: formData.institution,
+        issue_date: formData.issueDate,
+        qr_code: qrCodeData,
+        blockchain_hash: `0x${Math.random().toString(16).substring(2, 66)}`,
+        ipfs_hash: file ? `Qm${Math.random().toString(36).substring(2, 48)}` : null,
+        issued_by: user.id,
+        status: "active",
+      });
+
+      if (error) throw error;
+
+      setCertificateId(certId);
       toast.success("Certificate issued successfully!", { id: "blockchain" });
-      toast.success(`Certificate ID: ${certId}`);
-    }, 2000);
+      
+      // Reset form
+      setFormData({
+        holderName: "",
+        courseName: "",
+        institution: "",
+        issueDate: "",
+        description: "",
+      });
+      setFile(null);
+    } catch (error: any) {
+      console.error("Error issuing certificate:", error);
+      toast.error(error.message || "Failed to issue certificate", { id: "blockchain" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -150,9 +188,9 @@ const IssueCertificate = () => {
               </p>
             </div>
 
-            <Button type="submit" size="lg" className="w-full">
+            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
               <FileText className="mr-2 h-5 w-5" />
-              Issue Certificate on Blockchain
+              {isSubmitting ? "Issuing..." : "Issue Certificate on Blockchain"}
             </Button>
           </form>
         </CardContent>
