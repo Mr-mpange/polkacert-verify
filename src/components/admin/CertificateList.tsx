@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,49 +12,63 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Search, Eye, Ban, Download } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Certificate {
   id: string;
-  holderName: string;
-  courseName: string;
-  issueDate: string;
-  status: "valid" | "revoked";
+  certificate_id: string;
+  holder_name: string;
+  course_name: string;
+  issue_date: string;
+  status: string;
 }
-
-const mockCertificates: Certificate[] = [
-  {
-    id: "CERT-2024-001",
-    holderName: "John Doe",
-    courseName: "Blockchain Development",
-    issueDate: "2024-01-15",
-    status: "valid",
-  },
-  {
-    id: "CERT-2024-002",
-    holderName: "Jane Smith",
-    courseName: "Web3 Security",
-    issueDate: "2024-01-20",
-    status: "valid",
-  },
-  {
-    id: "CERT-2024-003",
-    holderName: "Mike Johnson",
-    courseName: "Smart Contract Development",
-    issueDate: "2024-02-01",
-    status: "revoked",
-  },
-];
 
 const CertificateList = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [certificates] = useState<Certificate[]>(mockCertificates);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCertificates();
+  }, []);
+
+  const fetchCertificates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("certificates")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setCertificates(data || []);
+    } catch (error: any) {
+      console.error("Error fetching certificates:", error);
+      toast.error("Failed to load certificates");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredCertificates = certificates.filter(
     (cert) =>
-      cert.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cert.holderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cert.courseName.toLowerCase().includes(searchTerm.toLowerCase())
+      cert.certificate_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cert.holder_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cert.course_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <Card className="shadow-soft">
+        <CardContent className="py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading certificates...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-soft">
@@ -86,40 +100,48 @@ const CertificateList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCertificates.map((cert) => (
-                <TableRow key={cert.id}>
-                  <TableCell className="font-mono text-sm">{cert.id}</TableCell>
-                  <TableCell>{cert.holderName}</TableCell>
-                  <TableCell>{cert.courseName}</TableCell>
-                  <TableCell>{cert.issueDate}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        cert.status === "valid"
-                          ? "bg-success text-success-foreground"
-                          : "bg-destructive text-destructive-foreground"
-                      }
-                    >
-                      {cert.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      {cert.status === "valid" && (
-                        <Button variant="ghost" size="sm">
-                          <Ban className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+              {filteredCertificates.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No certificates found
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredCertificates.map((cert) => (
+                  <TableRow key={cert.id}>
+                    <TableCell className="font-mono text-sm">{cert.certificate_id}</TableCell>
+                    <TableCell>{cert.holder_name}</TableCell>
+                    <TableCell>{cert.course_name}</TableCell>
+                    <TableCell>{new Date(cert.issue_date).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          cert.status === "active"
+                            ? "bg-success text-success-foreground"
+                            : "bg-destructive text-destructive-foreground"
+                        }
+                      >
+                        {cert.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {cert.status === "active" && (
+                          <Button variant="ghost" size="sm">
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
