@@ -27,6 +27,8 @@ export type Database = {
           issue_date: string
           issued_by: string
           qr_code: string
+          revocation_reason: string | null
+          revoked_at: string | null
           status: string
           updated_at: string
         }
@@ -42,6 +44,8 @@ export type Database = {
           issue_date: string
           issued_by: string
           qr_code: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -57,6 +61,8 @@ export type Database = {
           issue_date?: string
           issued_by?: string
           qr_code?: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
           status?: string
           updated_at?: string
         }

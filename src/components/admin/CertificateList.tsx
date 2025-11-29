@@ -11,7 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Ban, Download } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Search, Eye, Ban, Download, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -28,6 +38,9 @@ const CertificateList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
+  const [revocationReason, setRevocationReason] = useState("");
 
   useEffect(() => {
     fetchCertificates();
@@ -47,6 +60,56 @@ const CertificateList = () => {
       toast.error("Failed to load certificates");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRevokeCertificate = async () => {
+    if (!selectedCertificate || !revocationReason.trim()) {
+      toast.error("Please provide a revocation reason");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("certificates")
+        .update({
+          status: "revoked",
+          revoked_at: new Date().toISOString(),
+          revocation_reason: revocationReason,
+        })
+        .eq("id", selectedCertificate.id);
+
+      if (error) throw error;
+
+      toast.success("Certificate revoked successfully");
+      setRevokeDialogOpen(false);
+      setRevocationReason("");
+      setSelectedCertificate(null);
+      fetchCertificates();
+    } catch (error: any) {
+      console.error("Error revoking certificate:", error);
+      toast.error("Failed to revoke certificate");
+    }
+  };
+
+  const handleReactivateCertificate = async (certId: string) => {
+    try {
+      const { error } = await supabase
+        .from("certificates")
+        .update({
+          status: "active",
+          revoked_at: null,
+          revocation_reason: null,
+        })
+        .eq("id", certId);
+
+      if (error) throw error;
+
+      toast.success("Certificate reactivated successfully");
+      fetchCertificates();
+    } catch (error: any) {
+      console.error("Error reactivating certificate:", error);
+      toast.error("Failed to reactivate certificate");
     }
   };
 
@@ -71,7 +134,8 @@ const CertificateList = () => {
   }
 
   return (
-    <Card className="shadow-soft">
+    <>
+      <Card className="shadow-soft">
       <CardHeader>
         <CardTitle>Manage Certificates</CardTitle>
         <div className="flex items-center gap-3 pt-4">
@@ -126,15 +190,32 @@ const CertificateList = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" title="View Details">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" title="Download">
                           <Download className="h-4 w-4" />
                         </Button>
-                        {cert.status === "active" && (
-                          <Button variant="ghost" size="sm">
-                            <Ban className="h-4 w-4" />
+                        {cert.status === "active" ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Revoke Certificate"
+                            onClick={() => {
+                              setSelectedCertificate(cert);
+                              setRevokeDialogOpen(true);
+                            }}
+                          >
+                            <Ban className="h-4 w-4 text-destructive" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Reactivate Certificate"
+                            onClick={() => handleReactivateCertificate(cert.id)}
+                          >
+                            <CheckCircle className="h-4 w-4 text-success" />
                           </Button>
                         )}
                       </div>
@@ -146,7 +227,40 @@ const CertificateList = () => {
           </Table>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+
+      <Dialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Revoke Certificate</DialogTitle>
+            <DialogDescription>
+              You are about to revoke certificate {selectedCertificate?.certificate_id}. This action
+              will mark the certificate as invalid.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reason">Revocation Reason *</Label>
+              <Textarea
+                id="reason"
+                placeholder="Enter the reason for revoking this certificate..."
+                value={revocationReason}
+                onChange={(e) => setRevocationReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRevokeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleRevokeCertificate}>
+              Revoke Certificate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

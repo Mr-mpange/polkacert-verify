@@ -4,52 +4,64 @@ import { Shield, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Download, Extern
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Certificate {
   id: string;
-  holderName: string;
-  courseName: string;
+  certificate_id: string;
+  holder_name: string;
+  course_name: string;
   institution: string;
-  issueDate: string;
-  blockchainHash: string;
-  status: "valid" | "revoked" | "not-found";
-  ipfsHash?: string;
+  issue_date: string;
+  blockchain_hash: string;
+  status: "active" | "revoked";
+  ipfs_hash?: string | null;
+  revocation_reason?: string | null;
+  revoked_at?: string | null;
 }
+
+type CertificateStatus = "valid" | "revoked" | "not-found";
 
 const VerifyCertificate = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [certificate, setCertificate] = useState<Certificate | null>(null);
+  const [status, setStatus] = useState<CertificateStatus>("not-found");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate blockchain verification
-    setTimeout(() => {
-      // Mock data - replace with actual blockchain query
-      if (id === "CERT-2024-001" || id) {
-        setCertificate({
-          id: id || "CERT-2024-001",
-          holderName: "John Doe",
-          courseName: "Blockchain Development Certification",
-          institution: "Tech Institute of Excellence",
-          issueDate: "2024-01-15",
-          blockchainHash: "0x7f9fade1c0d57a7af66ab4ead79fade1c0d57a7af66ab4ead7c2c2eb7b11a91385",
-          status: "valid",
-          ipfsHash: "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-        });
-      } else {
-        setCertificate({
-          id: id || "",
-          holderName: "",
-          courseName: "",
-          institution: "",
-          issueDate: "",
-          blockchainHash: "",
-          status: "not-found",
-        });
+    const fetchCertificate = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    }, 1500);
+
+      try {
+        const { data, error } = await supabase
+          .from("certificates")
+          .select("*")
+          .eq("certificate_id", id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setCertificate(data as Certificate);
+          setStatus(data.status === "active" ? "valid" : "revoked");
+        } else {
+          setStatus("not-found");
+        }
+      } catch (error: any) {
+        console.error("Error fetching certificate:", error);
+        toast.error("Failed to verify certificate");
+        setStatus("not-found");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCertificate();
   }, [id]);
 
   if (loading) {
@@ -64,7 +76,7 @@ const VerifyCertificate = () => {
   }
 
   const getStatusConfig = () => {
-    switch (certificate?.status) {
+    switch (status) {
       case "valid":
         return {
           icon: <CheckCircle2 className="h-16 w-16 text-success" />,
@@ -127,7 +139,7 @@ const VerifyCertificate = () => {
           </Card>
 
           {/* Certificate Details */}
-          {certificate?.status === "valid" && (
+          {status === "valid" && certificate && (
             <>
               <Card className="shadow-soft border-certificate-border border-2">
                 <CardHeader className="bg-gradient-hero">
@@ -137,15 +149,17 @@ const VerifyCertificate = () => {
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Certificate ID</p>
-                      <p className="text-lg font-mono text-foreground">{certificate.id}</p>
+                      <p className="text-lg font-mono text-foreground">{certificate.certificate_id}</p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Issue Date</p>
-                      <p className="text-lg text-foreground">{certificate.issueDate}</p>
+                      <p className="text-lg text-foreground">
+                        {new Date(certificate.issue_date).toLocaleDateString()}
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Holder Name</p>
-                      <p className="text-lg text-foreground">{certificate.holderName}</p>
+                      <p className="text-lg text-foreground">{certificate.holder_name}</p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Institution</p>
@@ -155,7 +169,7 @@ const VerifyCertificate = () => {
                   
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground">Course/Program</p>
-                    <p className="text-xl font-semibold text-foreground">{certificate.courseName}</p>
+                    <p className="text-xl font-semibold text-foreground">{certificate.course_name}</p>
                   </div>
 
                   <div className="border-t border-border pt-6 space-y-4">
@@ -166,14 +180,14 @@ const VerifyCertificate = () => {
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Transaction Hash</p>
                       <p className="text-sm font-mono text-foreground break-all bg-muted p-3 rounded">
-                        {certificate.blockchainHash}
+                        {certificate.blockchain_hash}
                       </p>
                     </div>
-                    {certificate.ipfsHash && (
+                    {certificate.ipfs_hash && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-muted-foreground">IPFS Hash</p>
                         <p className="text-sm font-mono text-foreground break-all bg-muted p-3 rounded">
-                          {certificate.ipfsHash}
+                          {certificate.ipfs_hash}
                         </p>
                       </div>
                     )}
@@ -193,7 +207,7 @@ const VerifyCertificate = () => {
               </Card>
 
               {/* Security Notice */}
-              <Card className="bg-primary/5 border-primary">
+              <Card className="bg-primary/5 border border-primary">
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     <Shield className="h-6 w-6 text-primary flex-shrink-0" />
@@ -208,6 +222,34 @@ const VerifyCertificate = () => {
                 </CardContent>
               </Card>
             </>
+          )}
+
+          {/* Revocation Details */}
+          {status === "revoked" && certificate && (
+            <Card className="border-destructive">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">Certificate ID</h3>
+                    <p className="text-sm font-mono text-muted-foreground">{certificate.certificate_id}</p>
+                  </div>
+                  {certificate.revocation_reason && (
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-2">Revocation Reason</h3>
+                      <p className="text-sm text-muted-foreground">{certificate.revocation_reason}</p>
+                    </div>
+                  )}
+                  {certificate.revoked_at && (
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-2">Revoked On</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(certificate.revoked_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
