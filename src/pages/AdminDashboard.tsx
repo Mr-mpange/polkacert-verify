@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import IssueCertificate from "@/components/admin/IssueCertificate";
 import CertificateList from "@/components/admin/CertificateList";
+import UserManagement from "@/components/admin/UserManagement";
 import Analytics from "@/components/admin/Analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -113,10 +114,11 @@ const AdminDashboard = () => {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+            <TabsList className="grid w-full grid-cols-4 lg:w-[550px]">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="issue">Issue Certificate</TabsTrigger>
-              <TabsTrigger value="manage">Manage</TabsTrigger>
+              <TabsTrigger value="issue">Issue</TabsTrigger>
+              <TabsTrigger value="manage">Certificates</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -129,6 +131,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="manage">
               <CertificateList />
+            </TabsContent>
+
+            <TabsContent value="users">
+              <UserManagement />
             </TabsContent>
           </Tabs>
         </div>
