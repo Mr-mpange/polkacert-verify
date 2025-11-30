@@ -49,6 +49,14 @@ const VerifyCertificate = () => {
         if (data) {
           setCertificate(data as Certificate);
           setStatus(data.status === "active" ? "valid" : "revoked");
+          
+          // Show verification notification
+          if (data.status === "active") {
+            toast.success("Certificate Verified Successfully", {
+              description: `${data.holder_name} - ${data.course_name}`,
+              icon: <CheckCircle2 className="h-5 w-5" />,
+            });
+          }
         } else {
           setStatus("not-found");
         }
