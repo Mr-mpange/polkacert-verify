@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Shield, Search, Award, Lock, FileCheck, QrCode } from "lucide-react";
+import { Shield, Search, Award, Lock, FileCheck, QrCode, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,18 +77,36 @@ const Index = () => {
             </p>
             
             {/* Verification Search */}
-            <div className="flex gap-3 max-w-2xl mx-auto pt-8">
-              <Input
-                type="text"
-                placeholder="Enter Certificate ID or scan QR code"
-                value={certificateId}
-                onChange={(e) => setCertificateId(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleVerify()}
-                className="h-14 text-lg"
-              />
-              <Button onClick={handleVerify} size="lg" className="h-14 px-8">
-                <Search className="mr-2 h-5 w-5" />
-                Verify
+            <div className="space-y-4 max-w-2xl mx-auto pt-8">
+              <div className="flex gap-3">
+                <Input
+                  type="text"
+                  placeholder="Enter Certificate ID"
+                  value={certificateId}
+                  onChange={(e) => setCertificateId(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleVerify()}
+                  className="h-14 text-lg"
+                />
+                <Button onClick={handleVerify} size="lg" className="h-14 px-8">
+                  <Search className="mr-2 h-5 w-5" />
+                  Verify
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border"></div>
+                <span className="text-sm text-muted-foreground">or</span>
+                <div className="flex-1 h-px bg-border"></div>
+              </div>
+              
+              <Button 
+                onClick={() => navigate("/scan")} 
+                size="lg" 
+                variant="outline"
+                className="w-full h-14"
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Scan QR Code
               </Button>
             </div>
           </div>
