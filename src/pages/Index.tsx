@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { PolkadotWallet } from "@/components/PolkadotWallet";
 
 const Index = () => {
   const [certificateId, setCertificateId] = useState("");
@@ -26,44 +27,22 @@ const Index = () => {
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <a href="/" className="text-foreground hover:text-primary transition-colors">Home</a>
+            <a href="/gallery" className="text-foreground hover:text-primary transition-colors">Gallery</a>
             <a href="/verify" className="text-foreground hover:text-primary transition-colors">Verify</a>
             <a href="/about" className="text-foreground hover:text-primary transition-colors">About</a>
-            <a href="/contact" className="text-foreground hover:text-primary transition-colors">Contact</a>
           </nav>
-          <Button onClick={() => navigate("/auth")} variant="default">
-            Admin Login
-          </Button>
+          <div className="flex items-center gap-2">
+            <PolkadotWallet />
+            <Button onClick={() => navigate("/gallery")} variant="outline">
+              <Award className="h-4 w-4 mr-2" />
+              Gallery
+            </Button>
+            <Button onClick={() => navigate("/auth")} variant="default">
+              Login
+            </Button>
+          </div>
         </div>
       </header>
-
-      {/* Demo Credentials Banner */}
-      <div className="bg-accent/10 border-b border-accent/20">
-        <div className="container mx-auto px-4 py-4">
-          <Card className="bg-card border-accent">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-foreground flex items-center gap-2">
-                    <Award className="h-5 w-5 text-accent" />
-                    Demo Account & Sample Certificates
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Use these credentials to test the admin dashboard</p>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 w-full md:w-auto">
-                  <div className="space-y-1 p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs font-medium text-muted-foreground">Admin Login</p>
-                    <p className="text-sm font-mono text-foreground">kilindoalaika771@gmail.com</p>
-                  </div>
-                  <div className="space-y-1 p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs font-medium text-muted-foreground">Sample Certificate IDs</p>
-                    <p className="text-xs font-mono text-foreground">CERT-2024-001, CERT-2024-002</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
 
       {/* Hero Section */}
       <section className="py-20 bg-gradient-hero">

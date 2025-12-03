@@ -14,6 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      verification_logs: {
+        Row: {
+          id: string
+          certificate_id: string
+          verified_at: string
+          verified_by: string | null
+          verification_method: string
+          ip_address: string | null
+          user_agent: string | null
+          location_data: Json | null
+          verification_result: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          certificate_id: string
+          verified_at?: string
+          verified_by?: string | null
+          verification_method: string
+          ip_address?: string | null
+          user_agent?: string | null
+          location_data?: Json | null
+          verification_result: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          certificate_id?: string
+          verified_at?: string
+          verified_by?: string | null
+          verification_method?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          location_data?: Json | null
+          verification_result?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_logs_certificate_id_fkey"
+            columns: ["certificate_id"]
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_logs_verified_by_fkey"
+            columns: ["verified_by"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       certificates: {
         Row: {
           blockchain_hash: string
@@ -124,6 +176,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_certificate_verification: {
+        Args: {
+          p_certificate_id: string
+          p_verification_method: string
+          p_verification_result: string
+          p_ip_address?: string | null
+          p_user_agent?: string | null
+          p_location_data?: Json | null
+        }
+        Returns: string
       }
     }
     Enums: {

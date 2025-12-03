@@ -1,0 +1,8 @@
+Collecting Pillow
+  Using cached pillow-12.0.0-cp313-cp313-win_amd64.whl.metadata (9.0 kB)
+Downloading pillow-12.0.0-cp313-cp313-win_amd64.whl (7.0 MB)
+   -                                        0.3/7.0 MB ? eta -:--:--
+Resuming download pillow-12.0.0-cp313-cp313-win_amd64.whl (262 kB/7.0 MB)
+   ---------------------------------------- 7.0/7.0 MB 176.5 kB/s  0:00:35
+Installing collected packages: Pillow
+Successfully installed Pillow-12.0.0

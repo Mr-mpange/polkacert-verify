@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Search, Eye, Ban, Download, CheckCircle } from "lucide-react";
+import { Search, Eye, Ban, Download, CheckCircle, Shield, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -39,8 +40,10 @@ const CertificateList = () => {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
   const [revocationReason, setRevocationReason] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCertificates();
@@ -110,6 +113,139 @@ const CertificateList = () => {
     } catch (error: any) {
       console.error("Error reactivating certificate:", error);
       toast.error("Failed to reactivate certificate");
+    }
+  };
+
+  const handleViewCertificate = (cert: Certificate) => {
+    setSelectedCertificate(cert);
+    setViewDialogOpen(true);
+  };
+
+  const handleDownloadCertificate = (cert: Certificate) => {
+    try {
+      // Create HTML certificate
+      const certificateHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Certificate - ${cert.certificate_id}</title>
+  <style>
+    body {
+      font-family: 'Georgia', serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 40px;
+      border: 10px double #2563eb;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .certificate {
+      background: white;
+      padding: 60px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 48px;
+      color: #2563eb;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+    .subtitle {
+      font-size: 24px;
+      color: #64748b;
+      margin-bottom: 40px;
+    }
+    .content {
+      margin: 40px 0;
+      line-height: 2;
+    }
+    .name {
+      font-size: 36px;
+      font-weight: bold;
+      color: #1e293b;
+      margin: 20px 0;
+      border-bottom: 2px solid #2563eb;
+      display: inline-block;
+      padding-bottom: 10px;
+    }
+    .course {
+      font-size: 28px;
+      color: #2563eb;
+      margin: 20px 0;
+      font-style: italic;
+    }
+    .details {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .blockchain {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f1f5f9;
+      border-left: 4px solid #2563eb;
+    }
+    .status {
+      display: inline-block;
+      padding: 8px 20px;
+      background: ${cert.status === 'active' ? '#10b981' : '#ef4444'};
+      color: white;
+      border-radius: 20px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate">
+    <h1>🎓 Certificate of Completion</h1>
+    <div class="subtitle">This is to certify that</div>
+    
+    <div class="content">
+      <div class="name">${cert.holder_name}</div>
+      <p>has successfully completed</p>
+      <div class="course">${cert.course_name}</div>
+    </div>
+    
+    <div class="details">
+      <p><strong>Certificate ID:</strong> ${cert.certificate_id}</p>
+      <p><strong>Issue Date:</strong> ${new Date(cert.issue_date).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })}</p>
+      <div class="status">${cert.status.toUpperCase()}</div>
+    </div>
+    
+    <div class="blockchain">
+      <p><strong>🔒 Blockchain Verified</strong></p>
+      <p style="font-size: 12px; word-break: break-all;">
+        This certificate has been verified on the Polkadot blockchain.<br>
+        Verify at: ${window.location.origin}/verify/${cert.certificate_id}
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+      `.trim();
+
+      // Create blob and download
+      const blob = new Blob([certificateHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Certificate_${cert.certificate_id}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Certificate downloaded! Open the HTML file in your browser.");
+    } catch (error) {
+      console.error("Error downloading certificate:", error);
+      toast.error("Failed to download certificate");
     }
   };
 
@@ -190,10 +326,20 @@ const CertificateList = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" title="View Details">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          title="View Details"
+                          onClick={() => handleViewCertificate(cert)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" title="Download">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          title="Download"
+                          onClick={() => handleDownloadCertificate(cert)}
+                        >
                           <Download className="h-4 w-4" />
                         </Button>
                         {cert.status === "active" ? (
@@ -229,6 +375,72 @@ const CertificateList = () => {
       </CardContent>
       </Card>
 
+      {/* View Certificate Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Certificate Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedCertificate && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Certificate ID</Label>
+                  <p className="font-mono text-sm">{selectedCertificate.certificate_id}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Status</Label>
+                  <Badge
+                    className={
+                      selectedCertificate.status === "active"
+                        ? "bg-success text-success-foreground"
+                        : "bg-destructive text-destructive-foreground"
+                    }
+                  >
+                    {selectedCertificate.status}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Holder Name</Label>
+                  <p className="font-semibold">{selectedCertificate.holder_name}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Issue Date</Label>
+                  <p>{new Date(selectedCertificate.issue_date).toLocaleDateString()}</p>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label className="text-muted-foreground">Course Name</Label>
+                  <p className="font-semibold">{selectedCertificate.course_name}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/verify/${selectedCertificate?.certificate_id}`)}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View Full Details
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedCertificate) {
+                  handleDownloadCertificate(selectedCertificate);
+                }
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Certificate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Revoke Certificate Dialog */}
       <Dialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
         <DialogContent>
           <DialogHeader>

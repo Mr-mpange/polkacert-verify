@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AIVerificationUpload } from "@/components/AIVerificationUpload";
 
 interface Certificate {
   id: string;
@@ -46,9 +47,20 @@ const VerifyCertificate = () => {
 
         if (error) throw error;
 
+        let verificationResult: "valid" | "revoked" | "not_found" = "not_found";
+
         if (data) {
           setCertificate(data as Certificate);
-          setStatus(data.status === "active" ? "valid" : "revoked");
+          const certStatus = data.status === "active" ? "valid" : "revoked";
+          setStatus(certStatus);
+          verificationResult = certStatus;
+          
+          // Log the verification
+          await supabase.rpc("log_certificate_verification", {
+            p_certificate_id: data.id,
+            p_verification_method: "direct_link",
+            p_verification_result: verificationResult,
+          });
           
           // Show verification notification
           if (data.status === "active") {
@@ -59,6 +71,7 @@ const VerifyCertificate = () => {
           }
         } else {
           setStatus("not-found");
+          verificationResult = "not_found";
         }
       } catch (error: any) {
         console.error("Error fetching certificate:", error);
@@ -213,6 +226,9 @@ const VerifyCertificate = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* AI Visual Verification */}
+              <AIVerificationUpload certificateData={certificate} />
 
               {/* Security Notice */}
               <Card className="bg-primary/5 border border-primary">

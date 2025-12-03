@@ -7,9 +7,10 @@ import Index from "./pages/Index";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import ScanCertificate from "./pages/ScanCertificate";
 import AdminDashboard from "./pages/AdminDashboard";
+import UserDashboard from "./pages/UserDashboard";
+import CertificateGallery from "./pages/CertificateGallery";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import TestNotifications from "./pages/TestNotifications";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useCertificateNotifications } from "@/hooks/useCertificateNotifications";
 
@@ -29,11 +30,19 @@ const App = () => (
         <AppContent />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/gallery" element={<CertificateGallery />} />
           <Route path="/verify/:id" element={<VerifyCertificate />} />
           <Route path="/verify" element={<VerifyCertificate />} />
           <Route path="/scan" element={<ScanCertificate />} />
-          <Route path="/test-notifications" element={<TestNotifications />} />
           <Route path="/auth" element={<Auth />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <UserDashboard />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/admin" 
             element={

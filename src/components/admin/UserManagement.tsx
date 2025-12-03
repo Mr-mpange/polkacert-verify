@@ -83,6 +83,32 @@ const UserManagement = () => {
     }
   };
 
+  const handleChangeRole = async (userId: string, newRole: "admin" | "user") => {
+    try {
+      // First, delete existing role
+      const { error: deleteError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (deleteError) throw deleteError;
+
+      // Then insert new role
+      const { error: insertError } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role: newRole });
+
+      if (insertError) throw insertError;
+
+      toast.success(`Role changed to ${newRole} successfully`);
+      setDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      console.error("Error changing role:", error);
+      toast.error("Failed to change role");
+    }
+  };
+
   const handleAssignRole = async (userId: string, role: "admin" | "user") => {
     try {
       const { error } = await supabase
@@ -145,6 +171,7 @@ const UserManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>User ID</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Full Name</TableHead>
                   <TableHead>Roles</TableHead>
@@ -155,13 +182,16 @@ const UserManagement = () => {
               <TableBody>
                 {filteredProfiles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       No users found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredProfiles.map((profile) => (
                     <TableRow key={profile.id}>
+                      <TableCell className="font-mono text-xs">
+                        {profile.id.slice(0, 8)}...
+                      </TableCell>
                       <TableCell className="font-medium">{profile.email}</TableCell>
                       <TableCell>{profile.full_name || "-"}</TableCell>
                       <TableCell>
@@ -216,37 +246,53 @@ const UserManagement = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Role</DialogTitle>
+            <DialogTitle>Manage User Role</DialogTitle>
             <DialogDescription>
-              Assign a role to {selectedUser?.email}
+              Change role for {selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Current Roles:</p>
+              <p className="text-sm font-medium">User ID:</p>
+              <code className="text-xs bg-muted p-2 rounded block break-all">
+                {selectedUser?.id}
+              </code>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Current Role:</p>
               <div className="flex gap-2">
                 {userRoles[selectedUser?.id || ""]?.map((role) => (
                   <Badge key={role} variant="secondary">
                     {role}
                   </Badge>
-                )) || <span className="text-sm text-muted-foreground">No roles assigned</span>}
+                )) || <span className="text-sm text-muted-foreground">No role assigned</span>}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Change to:</p>
+              <div className="flex gap-2">
+                <Button
+                  variant={userRoles[selectedUser?.id || ""]?.[0] === "user" ? "secondary" : "outline"}
+                  onClick={() => selectedUser && handleChangeRole(selectedUser.id, "user")}
+                  className="flex-1"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  User
+                </Button>
+                <Button
+                  variant={userRoles[selectedUser?.id || ""]?.[0] === "admin" ? "default" : "outline"}
+                  onClick={() => selectedUser && handleChangeRole(selectedUser.id, "admin")}
+                  className="flex-1"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => selectedUser && handleAssignRole(selectedUser.id, "user")}
-            >
-              Assign User Role
-            </Button>
-            <Button
-              onClick={() => selectedUser && handleAssignRole(selectedUser.id, "admin")}
-            >
-              Assign Admin Role
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

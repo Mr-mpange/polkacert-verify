@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,35 +16,15 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check if admin
-        const { data: isAdmin } = await supabase.rpc('has_role', {
-          _user_id: session.user.id,
-          _role: 'admin'
-        });
-        
-        navigate(isAdmin ? "/admin" : "/");
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/admin`;
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
           },
@@ -54,7 +34,16 @@ const Auth = () => {
       if (error) throw error;
 
       toast.success("Account created successfully!");
-      navigate("/admin");
+      
+      // Check if user is admin after signup
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: isAdmin } = await supabase.rpc('has_role', {
+          _user_id: session.user.id,
+          _role: 'admin'
+        });
+        navigate(isAdmin ? "/admin" : "/dashboard");
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to sign up");
     } finally {
@@ -75,7 +64,16 @@ const Auth = () => {
       if (error) throw error;
 
       toast.success("Signed in successfully!");
-      navigate("/admin");
+      
+      // Check if user is admin after signin
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: isAdmin } = await supabase.rpc('has_role', {
+          _user_id: session.user.id,
+          _role: 'admin'
+        });
+        navigate(isAdmin ? "/admin" : "/dashboard");
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");
     } finally {
@@ -148,7 +146,7 @@ const Auth = () => {
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="admin@example.com"
+                    placeholder="user@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required

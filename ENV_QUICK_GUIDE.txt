@@ -1,0 +1,133 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                  ENVIRONMENT SETUP - QUICK GUIDE                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📋 WHAT YOU NEED:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. ✅ SUPABASE ACCOUNT (REQUIRED)
+   └─ Get from: https://supabase.com/
+   └─ Free tier available
+   └─ Takes 5 minutes to setup
+
+2. ✅ POLKADOT ENDPOINT (REQUIRED)
+   └─ Use: wss://westend-rpc.polkadot.io
+   └─ Free testnet
+   └─ No signup needed
+
+3. ⚠️  SUBSCAN API KEY (OPTIONAL)
+   └─ Get from: https://support.subscan.io/
+   └─ Improves performance
+   └─ Not required for testing
+
+
+📝 SETUP STEPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1: Copy example file
+┌────────────────────────────────────────────────────────────────┐
+│ copy .env.example .env                                         │
+└────────────────────────────────────────────────────────────────┘
+
+STEP 2: Get Supabase credentials
+┌────────────────────────────────────────────────────────────────┐
+│ 1. Go to https://supabase.com/                                 │
+│ 2. Create account (free)                                       │
+│ 3. Create new project                                          │
+│ 4. Go to Settings > API                                        │
+│ 5. Copy "Project URL"                                          │
+│ 6. Copy "anon public" key                                      │
+└────────────────────────────────────────────────────────────────┘
+
+STEP 3: Fill .env file
+┌────────────────────────────────────────────────────────────────┐
+│ VITE_SUPABASE_URL=https://xxxxx.supabase.co                   │
+│ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... │
+│ VITE_POLKADOT_ENDPOINT=wss://westend-rpc.polkadot.io          │
+│ VITE_SUBSCAN_API_KEY=your-key-here (optional)                 │
+└────────────────────────────────────────────────────────────────┘
+
+STEP 4: Setup database
+┌────────────────────────────────────────────────────────────────┐
+│ 1. In Supabase dashboard, go to SQL Editor                    │
+│ 2. Run migrations from supabase/migrations/ folder            │
+│    - 20240101000000_initial_schema.sql                         │
+│    - 20240102000000_add_roles.sql                              │
+│    - 20251130000000_add_verification_logs.sql                  │
+└────────────────────────────────────────────────────────────────┘
+
+STEP 5: Start application
+┌────────────────────────────────────────────────────────────────┐
+│ START_ALL.bat                                                  │
+└────────────────────────────────────────────────────────────────┘
+
+
+📂 FILES YOU NEED:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ .env.example          Template file (already exists)
+✅ .env                  Your actual config (create this!)
+✅ SETUP_ENV.md          Detailed setup guide
+✅ ENV_QUICK_GUIDE.txt   This file
+
+
+🔍 EXAMPLE .env FILE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Supabase (REQUIRED)
+VITE_SUPABASE_URL=https://abcdefghijklmnop.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprbG1ub3AiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY4ODg4ODg4OCwiZXhwIjoyMDA0NDY0ODg4fQ.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Polkadot (REQUIRED)
+VITE_POLKADOT_ENDPOINT=wss://westend-rpc.polkadot.io
+
+# Subscan (OPTIONAL)
+VITE_SUBSCAN_API_KEY=your-subscan-api-key-here
+
+
+⚠️  IMPORTANT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ Never commit .env to git (already in .gitignore)
+❌ Never share your .env file
+❌ Never share your Supabase keys publicly
+
+✅ Safe to share: .env.example
+✅ Safe to share: Polkadot endpoint
+
+
+🆘 TROUBLESHOOTING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: "Supabase client error"
+Solution: Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+
+Problem: "Polkadot connection failed"
+Solution: Check internet connection, try different endpoint
+
+Problem: ".env file not found"
+Solution: Make sure .env is in root folder (same as package.json)
+
+Problem: "Database error"
+Solution: Run migrations in Supabase SQL Editor
+
+
+📚 MORE HELP:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Read: SETUP_ENV.md      - Detailed setup instructions
+Read: README.md         - Complete documentation
+Run:  START_ALL.bat     - Start the application
+
+
+✅ READY TO START:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After creating .env file:
+
+1. npm install
+2. START_ALL.bat
+3. Open: http://localhost:5173
+
+🎉 Done!
+

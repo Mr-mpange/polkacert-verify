@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Shield, Plus, FileText, BarChart3, Users, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +10,64 @@ import UserManagement from "@/components/admin/UserManagement";
 import Analytics from "@/components/admin/Analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { PolkadotWallet } from "@/components/PolkadotWallet";
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
   const { loading } = useAdminCheck();
   const [activeTab, setActiveTab] = useState("overview");
+  const [stats, setStats] = useState({
+    totalIssued: 0,
+    verifiedToday: 0,
+    activeUsers: 0,
+    revoked: 0,
+  });
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      // Get total certificates
+      const { count: totalIssued } = await supabase
+        .from("certificates")
+        .select("*", { count: "exact", head: true });
+
+      // Get revoked certificates
+      const { count: revoked } = await supabase
+        .from("certificates")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "revoked");
+
+      // Get today's verifications
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { count: verifiedToday } = await supabase
+        .from("verification_logs")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", today.toISOString());
+
+      // Get active users (users who verified in last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { count: activeUsers } = await supabase
+        .from("verification_logs")
+        .select("user_id", { count: "exact", head: true })
+        .gte("created_at", thirtyDaysAgo.toISOString());
+
+      setStats({
+        totalIssued: totalIssued || 0,
+        verifiedToday: verifiedToday || 0,
+        activeUsers: activeUsers || 0,
+        revoked: revoked || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -31,12 +85,13 @@ const AdminDashboard = () => {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab("overview")}>
             <Shield className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold text-foreground">CertiChain Admin</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{user?.email}</span>
+            <PolkadotWallet />
+            <span className="text-sm text-muted-foreground hidden md:inline">{user?.email}</span>
             <Button onClick={signOut} variant="ghost" size="sm">
               <LogOut className="mr-2 h-4 w-4" />
               Logout
@@ -60,7 +115,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Total Issued</p>
-                    <p className="text-3xl font-bold text-foreground">1,234</p>
+                    <p className="text-3xl font-bold text-foreground">{stats.totalIssued}</p>
                   </div>
                   <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <FileText className="h-6 w-6 text-primary" />
@@ -74,7 +129,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Verified Today</p>
-                    <p className="text-3xl font-bold text-foreground">89</p>
+                    <p className="text-3xl font-bold text-foreground">{stats.verifiedToday}</p>
                   </div>
                   <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center">
                     <BarChart3 className="h-6 w-6 text-success" />
@@ -88,7 +143,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Active Users</p>
-                    <p className="text-3xl font-bold text-foreground">456</p>
+                    <p className="text-3xl font-bold text-foreground">{stats.activeUsers}</p>
                   </div>
                   <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center">
                     <Users className="h-6 w-6 text-accent" />
@@ -102,7 +157,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Revoked</p>
-                    <p className="text-3xl font-bold text-foreground">12</p>
+                    <p className="text-3xl font-bold text-foreground">{stats.revoked}</p>
                   </div>
                   <div className="h-12 w-12 rounded-lg bg-destructive/10 flex items-center justify-center">
                     <Settings className="h-6 w-6 text-destructive" />
